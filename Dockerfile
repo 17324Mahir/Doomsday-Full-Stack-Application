@@ -48,6 +48,14 @@ COPY --from=frontend-build /app/dist /srv
 USER 65534:65534
 EXPOSE 8080
 
+FROM scratch AS alwaysdata
+COPY --from=api /app/node_modules /app/node_modules
+COPY --from=api /app/dist /app/dist
+COPY --from=hosted-web /usr/bin/caddy /bin/caddy
+COPY --from=frontend-build /app/dist /public
+COPY deploy/hosted.Caddyfile deploy/public-access.caddy /config/
+COPY deploy/alwaysdata-start.sh /start.sh
+
 FROM nginx:stable-alpine AS web
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY --from=frontend-build /app/dist /usr/share/nginx/html

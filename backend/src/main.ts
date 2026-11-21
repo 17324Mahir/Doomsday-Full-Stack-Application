@@ -37,8 +37,18 @@ export async function createApp() {
   return app;
 }
 
+async function start() {
+  const app = await createApp();
+  const socket = process.env.API_SOCKET;
+  if (socket) {
+    await app.listen(socket);
+  } else {
+    await app.listen(Number(process.env.PORT ?? 3000), process.env.HOST ?? '127.0.0.1');
+  }
+}
+
 if (require.main === module) {
-  createApp().then((app) => app.listen(Number(process.env.PORT ?? 3000), process.env.HOST ?? '127.0.0.1')).catch(() => {
+  start().catch(() => {
     console.error('API startup failed. Check the database configuration and listen address.');
     process.exitCode = 1;
   });

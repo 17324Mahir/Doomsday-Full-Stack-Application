@@ -4,7 +4,8 @@
 	persist_config off
 }
 
-:8080 {
+:{$GATEWAY_PORT:8080} {
+	bind {$GATEWAY_BIND:0.0.0.0}
 	route {
 		header {
 			Content-Security-Policy "default-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:"
@@ -22,7 +23,7 @@
 		}
 		@hidden path_regexp (^|/)\.
 		respond @hidden 404
-		root * /srv
+		root * "{$WEB_ROOT:/srv}"
 		try_files {path} /index.html
 		file_server
 	}
