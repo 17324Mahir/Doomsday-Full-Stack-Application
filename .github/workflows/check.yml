@@ -1,0 +1,26 @@
+name: Check the planner
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Build and start the app
+        run: docker compose up --build -d --wait
+      - name: Run the API tests against an isolated PostgreSQL schema
+        run: docker compose run --rm --no-deps -v "$PWD/backend/test:/app/test:ro" setup ./node_modules/.bin/tsx --test 'test/*.test.ts'
+      - name: Check the published web port
+        run: |
+          curl --fail --silent http://127.0.0.1:5173/ > /dev/null
+          curl --fail --silent http://127.0.0.1:5173/api/health
+      - name: Stop the test services
+        if: always()
+        run: docker compose down --volumes

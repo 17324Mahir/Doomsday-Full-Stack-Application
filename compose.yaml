@@ -1,0 +1,73 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: doomsday_ready
+      POSTGRES_USER: planner
+    command:
+      - sh
+      - -ec
+      - |
+        export POSTGRES_PASSWORD=$$(od -An -N32 -tx1 /dev/urandom | tr -d ' [:space:]')
+        exec docker-entrypoint.sh postgres -c hba_file=/etc/postgresql/pg_hba.conf
+    volumes:
+      - database:/var/lib/postgresql
+      - db_socket:/var/run/postgresql
+      - ./deploy/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "test \"$$(cat /proc/1/comm)\" = postgres && pg_isready -U planner -d doomsday_ready"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  setup:
+    build:
+      context: .
+      target: setup
+    environment:
+      DATABASE_URL: postgresql://planner@localhost/doomsday_ready?host=/var/run/postgresql
+    volumes:
+      - db_socket:/var/run/postgresql
+      - app_credentials:/run/planner
+    depends_on:
+      db:
+        condition: service_healthy
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+    volumes:
+      - app_credentials:/run/planner:ro
+    read_only: true
+    tmpfs: /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+  web:
+    build:
+      context: .
+      target: web
+    read_only: true
+    tmpfs: /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "127.0.0.1:${WEB_PORT:-5173}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+volumes:
+  database:
+  db_socket:
+  app_credentials:

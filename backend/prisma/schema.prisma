@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Movie {
+  id            Int                 @id @default(autoincrement())
+  title         String              @unique
+  releaseYear   Int
+  runtime       Int
+  watched       Boolean             @default(false)
+  prerequisites MoviePrerequisite[] @relation("MovieDependencies")
+  requiredBy    MoviePrerequisite[] @relation("RequiredByMovie")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@map("movies")
+}
+
+model MoviePrerequisite {
+  movieId        Int
+  prerequisiteId Int
+  movie          Movie @relation("MovieDependencies", fields: [movieId], references: [id], onDelete: Cascade)
+  prerequisite   Movie @relation("RequiredByMovie", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, prerequisiteId])
+  @@index([prerequisiteId])
+  @@map("movie_prerequisites")
+}
+
+model Cinema {
+  id        Int            @id @default(autoincrement())
+  name      String         @unique
+  bundles   CinemaBundle[]
+  createdAt DateTime       @default(now())
+
+  @@map("cinemas")
+}
+
+model CinemaBundle {
+  id       Int    @id @default(autoincrement())
+  cinemaId Int
+  size     Int
+  cinema   Cinema @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
+
+  @@unique([cinemaId, size])
+  @@map("cinema_bundles")
+}

@@ -1,0 +1,47 @@
+services:
+  db:
+    restart: unless-stopped
+    networks: [storage]
+  setup:
+    networks: [storage]
+  api:
+    restart: unless-stopped
+    networks: [storage, application]
+    environment:
+      NODE_ENV: production
+    ports: !reset []
+  web:
+    restart: unless-stopped
+    networks: [application, edge]
+    ports: !reset []
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    networks: [edge]
+    read_only: true
+    tmpfs: /tmp
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_HOSTNAME: ${SITE_HOSTNAME:?Set the public DNS hostname}
+      EDITOR_USERNAME: ${EDITOR_USERNAME:-editor}
+      CADDY_PASSWORD_HASH: ${CADDY_PASSWORD_HASH:?Set the editor password hash}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - certificates:/data
+      - gateway_config:/config
+    depends_on:
+      - web
+volumes:
+  certificates:
+  gateway_config:
+networks:
+  edge:
+  application:
+    internal: true
+  storage:
+    internal: true
