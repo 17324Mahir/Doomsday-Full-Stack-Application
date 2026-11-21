@@ -1,10 +1,13 @@
 \getenv app_password APP_DB_PASSWORD
 BEGIN;
 SELECT 'CREATE ROLE planner_app LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'planner_app') \gexec
-ALTER ROLE planner_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD :'app_password';
+ALTER ROLE planner_app PASSWORD :'app_password';
+\if :{?socket_admin}
+ALTER ROLE planner_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
 ALTER ROLE planner PASSWORD NULL;
+\endif
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-GRANT CONNECT ON DATABASE doomsday_ready TO planner_app;
+GRANT CONNECT ON DATABASE :"DBNAME" TO planner_app;
 GRANT USAGE ON SCHEMA public TO planner_app;
 GRANT SELECT, INSERT ON movies, cinemas, cinema_bundles TO planner_app;
 GRANT UPDATE ("watched", "updatedAt") ON movies TO planner_app;

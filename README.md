@@ -14,6 +14,8 @@ Open the [movie library](http://localhost:5173) or the [interactive API referenc
 
 ## Public hosting
 
+The [Northflank deployment guide](deploy/northflank.md) uses two always-on Sandbox services and a private PostgreSQL database. A GitHub Actions monitor can check the live API and its database connection every 15 minutes.
+
 The [Oracle Cloud deployment guide](deploy/README.md) runs the full stack on one Always Free VM. The hosted configuration serves HTTPS, allows visitors to browse and calculate plans, and requires editor sign-in to change the shared catalog. Only the gateway publishes ports. The database administrator uses an internal Unix socket. The API uses a generated password in a private volume and has permission to change only the watched flag and timestamp on existing movie rows.
 
 ## Local development

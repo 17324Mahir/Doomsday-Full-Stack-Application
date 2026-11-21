@@ -32,6 +32,7 @@ services:
       CADDY_PASSWORD_HASH: ${CADDY_PASSWORD_HASH:?Set the editor password hash}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/public-access.caddy:/etc/caddy/public-access.caddy:ro
       - certificates:/data
       - gateway_config:/config
     depends_on:

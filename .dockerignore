@@ -1,6 +1,8 @@
 **
 !Dockerfile
 !nginx.conf
+!deploy/hosted.Caddyfile
+!deploy/public-access.caddy
 !backend/package*.json
 !backend/tsconfig.json
 !backend/src/**/*.ts

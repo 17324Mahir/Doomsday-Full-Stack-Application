@@ -1,45 +1,8 @@
 {$SITE_HOSTNAME} {
-	@unknownRead {
-		method GET HEAD
-		path /api /api/*
-		not path_regexp ^/api/(movies(/[0-9]+/rewatch-order)?|cinemas(/[0-9]+/booking)?)/?$
-	}
-	@externalWrite {
-		method POST PATCH
-		header Origin *
-		not header Origin https://{$SITE_HOSTNAME}
-	}
-	@foreignSiteWrite {
-		method POST PATCH
-		header Sec-Fetch-Site cross-site
-		header Sec-Fetch-Site same-site
-	}
-	@nonJsonWrite {
-		method POST PATCH
-		not header_regexp Content-Type `(?i)^application/json([ \t]*;.*)?$`
-	}
-	@requiresEditor `path('/editor') || method('POST', 'PATCH')`
-	@editorPage {
-		method GET HEAD
-		path /editor
-	}
-	@allowed `method('GET', 'HEAD') || (method('POST') && path('/api/movies', '/api/cinemas')) || (method('PATCH') && path_regexp('^/api/movies/[0-9]+$'))`
-
 	route {
-		header Strict-Transport-Security "max-age=31536000"
-		header -Server
-		respond /api-docs* 404
-		respond @unknownRead 404
-		respond @externalWrite 403
-		respond @foreignSiteWrite 403
-		respond @nonJsonWrite 415
-		basic_auth @requiresEditor bcrypt "Doomsday Ready" {
-			{env.EDITOR_USERNAME} {env.CADDY_PASSWORD_HASH}
-		}
-		redir @editorPage / 303
-		reverse_proxy @allowed web:8080 {
+		import public-access.caddy
+		reverse_proxy web:8080 {
 			header_up -Authorization
 		}
-		respond 405
 	}
 }
